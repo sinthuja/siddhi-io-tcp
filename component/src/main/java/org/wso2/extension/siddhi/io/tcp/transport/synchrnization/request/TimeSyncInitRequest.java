@@ -27,14 +27,18 @@ import java.nio.charset.StandardCharsets;
 public class TimeSyncInitRequest {
     private byte protocol;
     protected String messageType;
+    private String sourceId;
+    private long requestSendTime;
 
-    public TimeSyncInitRequest(byte protocol) {
+    public TimeSyncInitRequest(byte protocol, String sourceId, long requestSendTime) {
         this.protocol = protocol;
         this.messageType = Constant.TIME_SYNC_INIT;
+        this.sourceId = sourceId;
+        this.requestSendTime = requestSendTime;
     }
 
-    public TimeSyncInitRequest() {
-        this(Constant.PROTOCOL_VERSION);
+    public TimeSyncInitRequest(String sourceId, long requestSendTime) {
+        this(Constant.PROTOCOL_VERSION, sourceId, requestSendTime);
     }
 
     public String getMessageType() {
@@ -45,11 +49,21 @@ public class TimeSyncInitRequest {
         return protocol;
     }
 
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public long getRequestSendTime() {
+        return requestSendTime;
+    }
+
     public int getTotalBytes() {
         int size = 1; //protocol
-        size = size + 4; //total buffer requirement as int
         size = size + 4 + messageType.getBytes(StandardCharsets.UTF_8).length;
         // messageType size as int(4) and actual messageType value.
+        size = size + 4 + sourceId.getBytes(StandardCharsets.UTF_8).length;
+        size = size + 8;
         return size;
     }
 }

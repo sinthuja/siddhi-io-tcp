@@ -87,20 +87,28 @@ public class TCPNettyTimeSyncClient {
     }
 
     public synchronized boolean sendTimeSyncRequest(final String sourceId) {
-        TimeSyncInitRequest timeSyncInitRequest = new TimeSyncInitRequest();
-        long requestSendTime = System.currentTimeMillis();
+        TimeSyncInitRequest timeSyncInitRequest = new TimeSyncInitRequest(sourceId, System.currentTimeMillis());
+        this.timeSyncInboundHandler.waitingForResponse();
         ChannelFuture cf = channel.writeAndFlush(timeSyncInitRequest);
         try {
             cf.sync();
-            long responseReceiveTime = System.currentTimeMillis();
             if (cf.isSuccess()) {
-                TimeSyncResponse timeSyncResponse = this.timeSyncInboundHandler.getTimeSyncResponse();
-                TimeSyncCompleteRequest timeSyncCompleteRequest = new TimeSyncCompleteRequest(sourceId,
-                        requestSendTime, timeSyncResponse.getRequestReceiveTime(),
-                        timeSyncResponse.getResponseSendTime(), responseReceiveTime);
-                ChannelFuture cf2 = channel.writeAndFlush(timeSyncCompleteRequest);
-                cf2.sync();
-                return cf2.isSuccess();
+                long currentTime = System.currentTimeMillis();
+                while (System.currentTimeMillis() - currentTime < 60000 &&
+                        this.timeSyncInboundHandler.isWaitingForResponse()) {
+                    Thread.sleep(1);
+                }
+                if (!this.timeSyncInboundHandler.isWaitingForResponse()) {
+                    TimeSyncResponse timeSyncResponse = this.timeSyncInboundHandler.getTimeSyncResponse();
+                    if (timeSyncResponse != null) {
+                        TimeSyncCompleteRequest timeSyncCompleteRequest = new TimeSyncCompleteRequest(sourceId,
+                                timeSyncResponse.getRequestSendTime(), timeSyncResponse.getRequestReceiveTime(),
+                                timeSyncResponse.getResponseSendTime(), timeSyncResponse.getResponseReceiveTime());
+                        ChannelFuture cf2 = channel.writeAndFlush(timeSyncCompleteRequest);
+                        cf2.sync();
+                        return cf2.isSuccess();
+                    }
+                }
             }
             return false;
         } catch (InterruptedException e) {

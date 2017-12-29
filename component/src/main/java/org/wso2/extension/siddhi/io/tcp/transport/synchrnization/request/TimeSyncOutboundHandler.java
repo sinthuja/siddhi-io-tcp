@@ -34,15 +34,14 @@ public class TimeSyncOutboundHandler extends ChannelOutboundHandlerAdapter {
         ByteBuf encoded = ctx.alloc().buffer(request.getTotalBytes());
 
         encoded.writeByte(request.getProtocol());
-        encoded.writeInt(request.getTotalBytes());
         encoded.writeInt(request.getMessageType().getBytes(StandardCharsets.UTF_8).length);
         encoded.writeBytes(request.getMessageType().getBytes(StandardCharsets.UTF_8));
+        encoded.writeInt(request.getSourceId().getBytes(StandardCharsets.UTF_8).length);
+        encoded.writeBytes(request.getSourceId().getBytes(StandardCharsets.UTF_8));
+        encoded.writeLong(request.getRequestSendTime());
 
         if (msg instanceof TimeSyncCompleteRequest) {
             TimeSyncCompleteRequest completeRequest = (TimeSyncCompleteRequest) msg;
-            encoded.writeInt(completeRequest.getSourceId().getBytes(StandardCharsets.UTF_8).length);
-            encoded.writeBytes(completeRequest.getSourceId().getBytes(StandardCharsets.UTF_8));
-            encoded.writeLong(completeRequest.getRequestSendTime());
             encoded.writeLong(completeRequest.getRequestReceiveTime());
             encoded.writeLong(completeRequest.getResponseSendTime());
             encoded.writeLong(completeRequest.getResponseReceiveTime());

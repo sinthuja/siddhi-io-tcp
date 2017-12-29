@@ -21,14 +21,18 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
+import org.apache.log4j.Logger;
 import org.wso2.extension.siddhi.io.tcp.transport.utils.Constant;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * This is the Inbout Handler adapter to process the response that was sent from the server.
  */
 public class TimeSyncInboundHandler extends ChannelInboundHandlerAdapter {
-
+    private static final Logger log = Logger.getLogger(TimeSyncInboundHandler.class);
     private TimeSyncResponse timeSyncResponse;
+    private boolean waitingForResponse;
 
     public synchronized void channelRead(ChannelHandlerContext ctx, Object msg) {
         ByteBuf in = (ByteBuf) msg;
@@ -36,24 +40,47 @@ public class TimeSyncInboundHandler extends ChannelInboundHandlerAdapter {
             return;
         }
         byte protocol = in.readByte();
-        int messageSize = in.readInt();
-        if (protocol == Constant.PROTOCOL_VERSION && messageSize > in.readableBytes()) {
-            in.resetReaderIndex();
+        if (protocol != Constant.PROTOCOL_VERSION) {
+            ReferenceCountUtil.release(msg);
             return;
         }
+        long responseReceiveTime = System.currentTimeMillis();
         byte responseCode = in.readByte();
         if (responseCode == Constant.SUCCESS_RESPONSE) {
-            long requestReceiveTime = in.readLong();
-            long responseSendTime = in.readLong();
-            this.timeSyncResponse = new TimeSyncResponse(requestReceiveTime, responseSendTime);
+            try {
+                int sourceIdSize = in.readInt();
+                String sourceId = getString(in, sourceIdSize);
+                long requestSendTime = in.readLong();
+                long requestReceiveTime = in.readLong();
+                long responseSendTime = in.readLong();
+                this.timeSyncResponse = new TimeSyncResponse(sourceId, requestSendTime, requestReceiveTime,
+                        responseSendTime, responseReceiveTime);
+                this.waitingForResponse = false;
+            } catch (UnsupportedEncodingException e) {
+                log.error("Unable to decode the request");
+            }
         }
         ReferenceCountUtil.release(msg);
+    }
+
+    public void waitingForResponse() {
+        this.waitingForResponse = true;
+    }
+
+    public boolean isWaitingForResponse() {
+        return waitingForResponse;
     }
 
     public synchronized TimeSyncResponse getTimeSyncResponse() {
         TimeSyncResponse responseHolder = this.timeSyncResponse;
         this.timeSyncResponse = null;
         return responseHolder;
+    }
+
+    private static String getString(ByteBuf byteBuffer, int size) throws UnsupportedEncodingException {
+        byte[] bytes = new byte[size];
+        byteBuffer.readBytes(bytes);
+        return new String(bytes, Constant.DEFAULT_CHARSET);
     }
 
 }

@@ -26,4 +26,8 @@
         <Class name="org.wso2.extension.siddhi.io.tcp.transport.utils.EventComposite"/>
         <Bug pattern="EI_EXPOSE_REP, EI_EXPOSE_REP2"/>
     </Match>
+    <Match>
+        <Class name="org.wso2.extension.siddhi.io.tcp.transport.synchrnization.TCPNettyTimeSyncClient"/>
+        <Bug pattern="SWL_SLEEP_WITH_LOCK_HELD"/>
+    </Match>
 </FindBugsFilter>

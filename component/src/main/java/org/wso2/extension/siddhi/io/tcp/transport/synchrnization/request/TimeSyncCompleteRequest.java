@@ -19,24 +19,19 @@ package org.wso2.extension.siddhi.io.tcp.transport.synchrnization.request;
 
 import org.wso2.extension.siddhi.io.tcp.transport.utils.Constant;
 
-import java.nio.charset.StandardCharsets;
 
 /**
  * This is the POJO class which holds the finalized time sync request properties that was sent from the server.
  */
 public class TimeSyncCompleteRequest extends TimeSyncInitRequest {
-    private String sourceId;
-    private long requestSendTime;
     private long requestReceiveTime;
     private long responseSendTime;
     private long responseReceiveTime;
 
     public TimeSyncCompleteRequest(byte protocol, String sourceId, long requestSendTime, long requestReceiveTime,
                                    long responseSendTime, long responseReceiveTime) {
-        super(protocol);
+        super(protocol, sourceId, requestSendTime);
         this.messageType = Constant.TIME_SYNC_DONE;
-        this.sourceId = sourceId;
-        this.requestSendTime = requestSendTime;
         this.requestReceiveTime = requestReceiveTime;
         this.responseSendTime = responseSendTime;
         this.responseReceiveTime = responseReceiveTime;
@@ -47,14 +42,6 @@ public class TimeSyncCompleteRequest extends TimeSyncInitRequest {
                                    long responseSendTime, long responseReceiveTime) {
         this(Constant.PROTOCOL_VERSION, sourceId, requestSendTime, responseReceiveTime, responseSendTime,
                 responseReceiveTime);
-    }
-
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public long getRequestSendTime() {
-        return requestSendTime;
     }
 
     public long getRequestReceiveTime() {
@@ -71,9 +58,7 @@ public class TimeSyncCompleteRequest extends TimeSyncInitRequest {
 
     public int getTotalBytes() {
         int size = super.getTotalBytes();
-        size = size + 4; // size of the sourceId as int;
-        size = size + this.sourceId.getBytes(StandardCharsets.UTF_8).length;
-        size = size + (4 * 8); //four long values
+        size = size + (3 * 8); //four long values
         return size;
     }
 }

@@ -21,27 +21,38 @@ package org.wso2.extension.siddhi.io.tcp.transport.synchrnization.response;
  * This is the POJO that is used to hold the response from the CEP server.
  */
 public class TimeSyncResponse {
+    private String sourceId;
+    private long requestSendTime;
     private long requestReceiveTime;
     private long responseSendTime;
+    private long responseReceiveTime;
 
-    public TimeSyncResponse(long requestReceiveTime, long responseSendTime) {
+    public TimeSyncResponse(String sourceId, long requestSendTime, long requestReceiveTime, long responseSendTime,
+                            long responseReceiveTime) {
+        this.sourceId = sourceId;
+        this.requestSendTime = requestSendTime;
         this.requestReceiveTime = requestReceiveTime;
         this.responseSendTime = responseSendTime;
+        this.responseReceiveTime = responseReceiveTime;
     }
 
     public long getRequestReceiveTime() {
         return requestReceiveTime;
     }
 
-    public void setRequestReceiveTime(long requestReceiveTime) {
-        this.requestReceiveTime = requestReceiveTime;
-    }
-
     public long getResponseSendTime() {
         return responseSendTime;
     }
 
-    public void setResponseSendTime(long responseSendTime) {
-        this.responseSendTime = responseSendTime;
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public long getRequestSendTime() {
+        return requestSendTime;
+    }
+
+    public long getResponseReceiveTime() {
+        return responseReceiveTime;
     }
 }
