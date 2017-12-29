@@ -31,6 +31,13 @@ public final class Constant {
     public static final boolean DEFAULT_TCP_NO_DELAY = true;
     public static final boolean DEFAULT_KEEP_ALIVE = true;
 
+    public static final int DEFAULT_TIME_SYNC_PORT = 7452;
+    public static final String TIME_SYNC_INIT = "T_SYN_IT";
+    public static final String TIME_SYNC_DONE = "T_SYN_DE";
+    public static final byte SUCCESS_RESPONSE = 0x20;
+    public static final byte FAILURE_RESPONSE = 0X50;
+    public static final byte PROTOCOL_VERSION = 0X01;
+
     private Constant() {
 
     }

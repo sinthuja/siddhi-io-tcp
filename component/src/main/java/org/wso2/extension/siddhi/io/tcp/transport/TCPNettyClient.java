@@ -29,6 +29,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.apache.log4j.Logger;
 import org.wso2.extension.siddhi.io.tcp.transport.handlers.MessageEncoder;
+import org.wso2.extension.siddhi.io.tcp.transport.synchrnization.TCPNettyTimeSyncClient;
 import org.wso2.extension.siddhi.io.tcp.transport.utils.EventComposite;
 import org.wso2.siddhi.core.exception.ConnectionUnavailableException;
 
@@ -70,6 +71,7 @@ public class TCPNettyClient {
                         );
                     }
                 });
+
     }
 
     public void connect(String host, int port) throws ConnectionUnavailableException {
@@ -79,8 +81,24 @@ public class TCPNettyClient {
             channel = bootstrap.connect(host, port).sync().channel();
             sessionId = UUID.randomUUID() + "-" + hostAndPort;
         } catch (Throwable e) {
-            throw new ConnectionUnavailableException("Error connecting to '" + hostAndPort + "', " + e.getMessage(), e);
+            throw new ConnectionUnavailableException("Error connecting to '" + hostAndPort + "', "
+                    + e.getMessage(), e);
         }
+    }
+
+    public void connect(String host, int port, int timeSyncPort, String sourceId)
+            throws ConnectionUnavailableException {
+        TCPNettyTimeSyncClient tcpNettyTimeSyncClient = new TCPNettyTimeSyncClient();
+        tcpNettyTimeSyncClient.connect(host, timeSyncPort);
+        for (int i = 0; i < 3; i++) {
+            boolean success = tcpNettyTimeSyncClient.sendTimeSyncRequest(sourceId);
+            if (!success && i < 2) {
+                log.warn("Failed time syncing, trying again..");
+            }
+        }
+        tcpNettyTimeSyncClient.disconnect();
+        tcpNettyTimeSyncClient.shutdown();
+        connect(host, port);
     }
 
     public ChannelFuture send(final String channelId, final byte[] message) {
