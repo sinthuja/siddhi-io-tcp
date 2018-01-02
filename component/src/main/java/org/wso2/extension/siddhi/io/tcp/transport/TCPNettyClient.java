@@ -86,11 +86,11 @@ public class TCPNettyClient {
         }
     }
 
-    public void connect(String host, int port, int timeSyncPort, String sourceId)
+    public void connect(String host, int port, int timeSyncPort, String sourceId, int timeSyncAttempts)
             throws ConnectionUnavailableException {
         TCPNettyTimeSyncClient tcpNettyTimeSyncClient = new TCPNettyTimeSyncClient();
         tcpNettyTimeSyncClient.connect(host, timeSyncPort);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < timeSyncAttempts; i++) {
             boolean success = tcpNettyTimeSyncClient.sendTimeSyncRequest(sourceId);
             if (!success && i < 2) {
                 log.warn("Failed time syncing, trying again..");
