@@ -88,17 +88,22 @@ public class TCPNettyClient {
 
     public void connect(String host, int port, int timeSyncPort, String sourceId, int timeSyncAttempts)
             throws ConnectionUnavailableException {
-        TCPNettyTimeSyncClient tcpNettyTimeSyncClient = new TCPNettyTimeSyncClient();
-        tcpNettyTimeSyncClient.connect(host, timeSyncPort);
-        for (int i = 0; i < timeSyncAttempts; i++) {
-            boolean success = tcpNettyTimeSyncClient.sendTimeSyncRequest(sourceId);
-            if (!success && i < 2) {
-                log.warn("Failed time syncing, trying again..");
+        if (timeSyncAttempts > 5) {
+            TCPNettyTimeSyncClient tcpNettyTimeSyncClient = new TCPNettyTimeSyncClient();
+            tcpNettyTimeSyncClient.connect(host, timeSyncPort);
+            for (int i = 0; i < timeSyncAttempts; i++) {
+                boolean success = tcpNettyTimeSyncClient.sendTimeSyncRequest(sourceId);
+                if (!success && i < 2) {
+                    log.warn("Failed time syncing, trying again..");
+                }
             }
+            tcpNettyTimeSyncClient.disconnect();
+            tcpNettyTimeSyncClient.shutdown();
+            connect(host, port);
+        } else {
+            throw new RuntimeException("The time sync attempts should be greater than 5, because first 5 time sync " +
+                    "attempts will be ingonored by the CEP server as warmup attempts");
         }
-        tcpNettyTimeSyncClient.disconnect();
-        tcpNettyTimeSyncClient.shutdown();
-        connect(host, port);
     }
 
     public ChannelFuture send(final String channelId, final byte[] message) {
