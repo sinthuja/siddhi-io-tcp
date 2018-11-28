@@ -55,11 +55,11 @@ public class TimeSyncInboundHandler extends ChannelInboundHandlerAdapter {
                 long responseSendTime = in.readLong();
                 this.timeSyncResponse = new TimeSyncResponse(sourceId, requestSendTime, requestReceiveTime,
                         responseSendTime, responseReceiveTime);
-                this.waitingForResponse = false;
             } catch (UnsupportedEncodingException e) {
                 log.error("Unable to decode the request");
             }
         }
+        this.waitingForResponse = false;
         ReferenceCountUtil.release(msg);
     }
 

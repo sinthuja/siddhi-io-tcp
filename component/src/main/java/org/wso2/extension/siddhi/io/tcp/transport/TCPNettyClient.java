@@ -97,6 +97,10 @@ public class TCPNettyClient {
                     log.warn("Failed time syncing, trying again..");
                 }
             }
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException ignored) {
+            }
             tcpNettyTimeSyncClient.disconnect();
             tcpNettyTimeSyncClient.shutdown();
             connect(host, port);
