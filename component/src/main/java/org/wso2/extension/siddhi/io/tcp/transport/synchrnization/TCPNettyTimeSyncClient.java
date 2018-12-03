@@ -1,20 +1,20 @@
 /*
-*  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-*  WSO2 Inc. licenses this file to you under the Apache License,
-*  Version 2.0 (the "License"); you may not use this file except
-*  in compliance with the License.
-*  You may obtain a copy of the License at
-*
-*    http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied.  See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*
-*/
+ *  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.wso2.extension.siddhi.io.tcp.transport.synchrnization;
 
 import io.netty.bootstrap.Bootstrap;
@@ -49,17 +49,21 @@ public class TCPNettyTimeSyncClient {
     private TimeSyncOutboundHandler timeSyncOutboundHandler;
 
     public TCPNettyTimeSyncClient(boolean keepAlive, boolean noDelay) {
-        this(0, keepAlive, noDelay);
+        this(0, keepAlive, noDelay, 0);
     }
 
     public TCPNettyTimeSyncClient() {
-        this(0, true, true);
+        this(0, true, true, 0);
     }
 
-    public TCPNettyTimeSyncClient(int numberOfThreads, boolean keepAlive, boolean noDelay) {
+    public TCPNettyTimeSyncClient(long driftInMS) {
+        this(0, true, true, driftInMS);
+    }
+
+    public TCPNettyTimeSyncClient(int numberOfThreads, boolean keepAlive, boolean noDelay, long driftInMS) {
         group = new NioEventLoopGroup(numberOfThreads);
         bootstrap = new Bootstrap();
-        timeSyncInboundHandler = new TimeSyncInboundHandler();
+        timeSyncInboundHandler = new TimeSyncInboundHandler(driftInMS);
         timeSyncOutboundHandler = new TimeSyncOutboundHandler();
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
@@ -86,17 +90,18 @@ public class TCPNettyTimeSyncClient {
         }
     }
 
-    public synchronized boolean sendTimeSyncRequest(final String sourceId) {
-        TimeSyncInitRequest timeSyncInitRequest = new TimeSyncInitRequest(sourceId, System.currentTimeMillis());
+    public synchronized boolean sendTimeSyncRequest(final String sourceId, long driftInMS) {
+        TimeSyncInitRequest timeSyncInitRequest = new TimeSyncInitRequest(sourceId,
+                getCurrentTime(driftInMS));
         this.timeSyncInboundHandler.waitingForResponse();
         ChannelFuture cf = channel.writeAndFlush(timeSyncInitRequest);
         try {
             cf.sync();
             if (cf.isSuccess()) {
-                long currentTime = System.currentTimeMillis();
-                while (System.currentTimeMillis() - currentTime < 60000 &&
+                long currentTime = getCurrentTime(driftInMS);
+                while (getCurrentTime(driftInMS) - currentTime < 60000 &&
                         this.timeSyncInboundHandler.isWaitingForResponse()) {
-                    Thread.sleep(1);
+                    Thread.sleep(0, 10);
                 }
                 if (!this.timeSyncInboundHandler.isWaitingForResponse()) {
                     TimeSyncResponse timeSyncResponse = this.timeSyncInboundHandler.getTimeSyncResponse();
@@ -114,6 +119,10 @@ public class TCPNettyTimeSyncClient {
         } catch (InterruptedException e) {
             return false;
         }
+    }
+
+    private long getCurrentTime(long driftInMs) {
+        return System.currentTimeMillis() + driftInMs;
     }
 
     public void disconnect() {

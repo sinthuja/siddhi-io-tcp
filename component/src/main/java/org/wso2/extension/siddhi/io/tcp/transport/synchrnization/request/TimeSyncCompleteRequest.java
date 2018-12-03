@@ -40,7 +40,7 @@ public class TimeSyncCompleteRequest extends TimeSyncInitRequest {
 
     public TimeSyncCompleteRequest(String sourceId, long requestSendTime, long requestReceiveTime,
                                    long responseSendTime, long responseReceiveTime) {
-        this(Constant.PROTOCOL_VERSION, sourceId, requestSendTime, responseReceiveTime, responseSendTime,
+        this(Constant.PROTOCOL_VERSION, sourceId, requestSendTime, requestReceiveTime, responseSendTime,
                 responseReceiveTime);
     }
 
